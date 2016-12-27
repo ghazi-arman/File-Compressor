@@ -1,0 +1,106 @@
+/**
+ *Name:Alan Chen
+ *PID:A12045305
+ */
+
+#include "HCTree.hpp"
+#include <iostream>
+#include <fstream>
+#include "HCNode.hpp"
+#include <vector>
+
+using namespace std;
+
+int main(int argc, char* argv[]) {
+	if(argc != 3) {
+		cerr << argv[0] << " called with incorrect arguments." << "\n";
+		cerr << "Usage: " << argv[0] << " infile outfile" << "\n";
+		return 0;
+	}
+	
+	if(string(argv[1]) == string(argv[2])) {
+		cerr << "infile and outfile must be different files" << "\n";
+		cerr << argv[0] << " called with incorrect arguments. " << "\n";
+		cerr << "Usage: " << argv[0] << + " infile outfile" << "\n";
+		return 0;
+	}
+
+	ifstream inFile;
+	inFile.open(argv[1], ios::in); 
+	if(!inFile) {
+		cerr << "Error opening \"0\"." << "\n";
+		return 0;
+	}
+
+	ofstream outFile;
+	outFile.open(argv[2], ios::out);//ofstream::binary);
+	if(!outFile) {
+		cerr << "Error opening \"0\"." << "\n";
+		return 0;
+	}
+
+	cerr << "Reading from this \"" << argv[1] << "\"... done." << "\n";
+	HCTree hcTree;
+	vector<int> freqs(256, 0);
+	int count = 0;
+	while(((int)inFile.peek() != EOF)) {
+		unsigned char symbol = inFile.get();
+		if(freqs[(int)symbol] == 0) {
+			count++;
+		}
+		freqs[(int)symbol]++;
+	}
+	cout << "Found " << count << " unique symbols in input file of size ";
+	//streampos end = inFile.tellg();
+	inFile.seekg(0, ios_base::end);
+	int end = inFile.tellg();
+	inFile.seekg(0, ios_base::beg);
+	int beg = inFile.tellg();
+	int inSize = end - beg;
+	
+	cout << inSize << " bytes." << "\n";
+	cout << "Building Huffman code tree... ";
+	hcTree.build(freqs);
+	cout << "done." << "\n";
+	
+	inFile.seekg(0,inFile.beg);
+	cerr << "Writing to file \"" << argv[2] << "\"... ";
+	for(unsigned int i = 0; i < freqs.size(); i++) {
+		if(freqs[i] != 0) {
+			//outFile.put(i);
+			//outFile.put(",");
+			outFile << freqs[i];	
+		}
+		if(i < freqs.size()) {
+			outFile << ",";
+		}
+	}
+	outFile << "\n";
+	/*while(((int)inFile.peek() != EOF)) {
+		unsigned char c = inFile.get();
+		hcTree.encode(c,outFile);
+	}*/
+	
+	for(int i = 0;i < inSize; i++) {
+		unsigned char c = inFile.get();
+		if(inFile.eof()) break;
+		hcTree.encode(c, outFile);
+	}
+	//outFile.flush();
+	cout << "done." << "\n";
+	
+	outFile.seekp(0, ios_base::end);
+	int end2 = outFile.tellp();
+	outFile.seekp(0, ios_base::beg);
+	int beg2 = outFile.tellp();
+	int outSize = end2 - beg2;
+	cout << "Output file has size " << outSize << " bytes." << "\n";
+	
+	double ratio = (double)outSize/inSize;
+	cout << "Compression ratio: " << ratio << "\n";
+	
+	inFile.close();
+	outFile.close();
+	
+	return 0;
+}
